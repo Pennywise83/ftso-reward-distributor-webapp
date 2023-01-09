@@ -1,0 +1,455 @@
+<ng-container *ngIf="!isMetamaskInstalled">
+  <header class="d-flex flex-wrap justify-content-center p-3 mb-4 border-bottom">
+    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+      <span class="fs-4">FTSO Fee/Reward Distributor</span>
+    </a>
+  </header>
+  <div class="container col-xl-10 col-xxl-8 px-4">
+    <ngb-alert class="mb-2" [type]="mainClientMessage.type" [dismissible]="false" class="fade show "
+      *ngIf="mainClientMessage.hasMessage()">
+      <h4 *ngIf="mainClientMessage.title != null">{{mainClientMessage.title}}</h4>
+      <span *ngIf="mainClientMessage.message != null">{{mainClientMessage.message}}</span>
+    </ngb-alert>
+  </div>
+</ng-container>
+<ng-container *ngIf="isMetamaskInstalled">
+  <header class="d-flex flex-wrap justify-content-center p-3 mb-4 border-bottom">
+    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+      <span class="fs-4">FTSO Fee/Reward Distributor</span>
+    </a>
+
+    <div class=" text-end">
+      <button type="button" class="btn btn-outline-primary me-2" (click)="connectMetamask()"
+        *ngIf="!isWalletConnected()">Connect wallet</button>
+      <ngb-alert class="py-1 px-4 m-0" type="info" [dismissible]="false" *ngIf="isWalletConnected()"><small>Connected to
+          <strong>{{selectedChainId.name}}</strong> network. Current address:
+          <strong>{{selectedAddress}}</strong></small>
+      </ngb-alert>
+    </div>
+  </header>
+  <div class="container col-xl-10 col-xxl-8 px-4">
+
+    <ng-container>
+      <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs">
+        <li [ngbNavItem]="0">
+          <a ngbNavLink>Manage instances</a>
+          <ng-template ngbNavContent>
+            <div class="row" *ngIf="!isWalletConnected()">
+              <ngb-alert class="mb-2" [type]="mainClientMessage.type" [dismissible]="false" class="fade show "
+                *ngIf="mainClientMessage.hasMessage()">
+                <h4 *ngIf="mainClientMessage.title != null">{{mainClientMessage.title}}</h4>
+                <span *ngIf="mainClientMessage.message != null">{{mainClientMessage.message}}</span>
+              </ngb-alert>
+            </div>
+            <div class="row" *ngIf="isWalletConnected()">
+              <div class="col-md-4">
+                <h2 class="fs-4 text-secondary">Active Instances</h2>
+
+                <div class="list-group">
+                  <a href="#" [ngClass]="{'active':selectedInstanceIdx == idx }"
+                    *ngFor="let namedInstance of instancesList; let idx = index;"
+                    (click)="selectNamedInstance(namedInstance,idx)" class="list-group-item list-group-item-action"
+                    style="position:relative;" aria-current="true">
+                    {{namedInstance.description}}<br />
+                    <small><code
+                        [ngClass]="{'text-white':selectedInstanceIdx == idx  }">{{namedInstance.instance}}</code>
+                    </small>
+                    <button style="position:absolute; top:5px; right: 5px;"
+                      class="btn btn-sm btn-light border text-muted py-0 px-1" (click)="openModal(operations.remove)">
+                      <i class="bi bi-x"></i></button>
+                  </a>
+                  <a href="#" [ngClass]="{'active':selectedInstanceIdx == null  }" (click)="resetRequest()"
+                    class=" list-group-item list-group-item-action" aria-current="true">
+                    Create new instance
+                  </a>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <h2 class="fs-4 text-secondary" *ngIf="selectedInstanceIdx == null">Create new RewardDistributor
+                  Instance
+                </h2>
+                <h2 class="fs-4 text-secondary"
+                  *ngIf="selectedInstanceIdx != null && instancesList[selectedInstanceIdx] && instancesList[selectedInstanceIdx].description">
+                  Edit
+                  {{instancesList[selectedInstanceIdx].description}} instance</h2>
+                <ngb-alert class="mb-2" [type]="mainClientMessage.type" [dismissible]="false" class="fade show "
+                  *ngIf="mainClientMessage.hasMessage()">
+                  <h4 *ngIf="mainClientMessage.title != null">{{mainClientMessage.title}}</h4>
+                  <span *ngIf="mainClientMessage.message != null">{{mainClientMessage.message}}</span>
+                </ngb-alert>
+
+                <form [formGroup]="requestFormGroup" *ngIf="!mainClientMessage.hasMessage()">
+                  <div class="p-3 border rounded-3 bg-light">
+                    <div class="row">
+                      <div class="col-md-12"
+                        *ngIf="requestFormGroup.get('instanceAddress') != null && requestFormGroup.get('instanceAddress').value != null">
+                        <div class="form-floating mb-4">
+                          <input type="text" class="form-control" placeholder="Instance address"
+                            formControlName="instanceAddress">
+                          <label for="floatingInput">Instance address</label>
+                          <div id="providerHelp" class="form-text">The address of the Reward Distributor instance
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-12"
+                        *ngIf="requestFormGroup.get('owner') != null && requestFormGroup.get('owner').value != null">
+                        <div class="form-floating mb-4">
+                          <input type="text" class="form-control" placeholder="Editor" formControlName="owner">
+                          <label for="floatingInput">Owner</label>
+                          <div id="providerHelp" class="form-text">The editor address of the Reward Distributor instance
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-12">
+                        <div class="form-floating mb-4">
+                          <input type="text" formControlName="provider"
+                            [ngClass]="{'is-invalid':requestFormGroup.get('provider').touched && requestFormGroup.get('provider').errors}"
+                            class="form-control" placeholder="Provider address">
+                          <label for="floatingInput">Provider address</label>
+                          <div class="invalid-feedback"
+                            *ngIf="requestFormGroup.get('provider').touched && requestFormGroup.get('provider').errors">
+                            Please, insert a provider address
+                          </div>
+                          <div id="providerHelp" class="form-text">The address of the FTSO provider, used to maintain a
+                            minimum balance
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-12">
+                        <div class="form-floating mb-4">
+                          <input type="text" class="form-control" placeholder="Instance description"
+                            [ngClass]="{'is-invalid':requestFormGroup.get('description').touched && requestFormGroup.get('description').errors}"
+                            formControlName="description">
+                          <label for="floatingInput">Instance description</label>
+                          <div class="invalid-feedback"
+                            *ngIf="requestFormGroup.get('description').touched && requestFormGroup.get('description').errors">
+                            Please insert an instance description
+                          </div>
+                          <div id="providerHelp" class="form-text">Description of the new RewardDistributor instance
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-8">
+                        <div class="form-floating mb-0">
+                          <input type="number" min="0" class="form-control"
+                            [ngClass]="{'is-invalid':requestFormGroup.get('reserveBalance').touched && requestFormGroup.get('reserveBalance').errors}"
+                            placeholder="Reserve balance" formControlName="reserveBalance">
+                          <label for=" reserveBalance">Reserve balance</label>
+                          <div class="invalid-feedback"
+                            *ngIf="requestFormGroup.get('reserveBalance').touched && requestFormGroup.get('reserveBalance').errors">
+                            Reserve balance value must be grater than zero
+                          </div>
+                          <div id="reserveBalanceHelp" class="form-text">The desired balance of the provider's account,
+                            it
+                            will be refilled to match the value if necessary
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="form-check form-switch form-switch-md">
+                          <input class="form-check-input " type="checkbox" role="switch" id="editable"
+                            formControlName="editable">
+                          <label class="form-check-label" for="editable">Editable</label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-center">
+                    <button class="w-50 btn btn-md btn-outline-primary my-3" (click)="addRecipient()">Add
+                      recipient</button>
+                  </div>
+                  <div class="p-3 border rounded-3 bg-light mb-3" formArrayName="recipients">
+                    <div *ngIf="recipients.controls.length==0">
+                      <p class="m-0" [ngClass]="{'text-danger':recipients.errors && recipients.errors['required']}">No
+                        recipients set</p>
+                    </div>
+                    <ng-container *ngIf="recipients.controls.length>0">
+                      <ng-container *ngFor="let recipientForm of recipients.controls; let idx = index">
+                        <div class="row" [formGroupName]="idx">
+                          <div class="col-md-1">
+                            <button class="btn btn-sm btn-light border text-muted py-0 px-1"
+                              *ngIf="requestFormGroup.get('editable').value" (click)="deleteRecipient(idx)">
+                              <i class="bi bi-x"></i></button>
+                          </div>
+                          <div class="col-md-7">
+                            <div class="form-floating">
+                              <input type="text" class="form-control" [id]="'recipient'+idx" placeholder="Recipient"
+                                [ngClass]="{'is-invalid':recipientForm.get('address').touched && recipientForm.get('address').errors}"
+                                formControlName="address">
+                              <label for="floatingInput">Address</label>
+                              <div class="invalid-feedback"
+                                *ngIf="recipientForm.get('address').touched && recipientForm.get('address').errors">
+                                Please, insert a recipient address
+                              </div>
+                              <div id="providerHelp" class="form-text">The address where the provider's fee will be sent
+                                to, in different percentages. </div>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="form-floating">
+
+                              <input type="text" class="form-control" [id]="'bips'+idx" placeholder="Percentage"
+                                ngxNumberFormat="###.##" [allowNegative]="true"
+                                [ngClass]="{'is-invalid':recipientForm.get('bips').touched && recipientForm.get('bips').errors}"
+                                formControlName="bips">
+                              <div class="invalid-feedback"
+                                *ngIf="recipientForm.get('bips').touched && recipientForm.get('bips').errors">
+                                <p class="my-0" *ngIf=" recipientForm.get('bips').errors['min']">
+                                  Please, insert a valid bips percentage
+                                </p>
+                                <p class="my-0" *ngIf=" recipientForm.get('bips').errors['bipsSumIsNot100']">
+                                  Bips sum must be equal to 100
+                                </p>
+                              </div>
+                              <label for="floatingInput">Percentage</label>
+                              <div class="mt-2 form-check">
+                                <input type="checkbox" class="form-check-input" [id]="'wrap'+idx"
+                                  formControlName="wrap">
+                                <label class="form-check-label" [for]="'wrap'+idx">Wrap</label>
+                              </div>
+                            </div>
+                          </div>
+                          <hr class="bg-secondary border-1 border-top border-secondary my-2"
+                            *ngIf="idx < recipients.controls.length-1">
+                        </div>
+                      </ng-container>
+                    </ng-container>
+                  </div>
+                  <div class="row" *ngIf="selectedInstanceIdx == null">
+                    <div class="col-md-12">
+                      <button class="w-100 btn btn-lg btn-primary" type="submit" [disabled]="!isWalletConnected()"
+                        (click)="openModal(operations.create)">Create
+                        instance</button>
+                    </div>
+                  </div>
+                  <div class="row" *ngIf="selectedInstanceIdx != null">
+                    <div class="col-md-4">
+                      <button class="w-100 btn btn-lg btn-danger" type="submit"
+                        [disabled]="!selectedInstanceData.editable || !this.isWalletConnected()"
+                        (click)="openModal(operations.destroy)">Destroy
+                        instance</button>
+                    </div>
+                    <div class="col-md-8">
+                      <button class="w-100 btn btn-lg btn-primary" type="submit"
+                        [disabled]="!selectedInstanceData.editable || !this.isWalletConnected()"
+                        (click)="openModal(operations.edit)">Update
+                        instance</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </ng-template>
+        </li>
+        <li [ngbNavItem]="1">
+          <a ngbNavLink>About</a>
+          <ng-template ngbNavContent>
+            <div class="row justify-content-md-center">
+              <div class="col-md-12">
+                <p>
+                  This project was created to offer an user interface for the <a
+                    href="https://github.com/alexdupre/ftso-reward-distributor"
+                    title="Ftso Rewward Distributor Smart Contract" target="_new">Ftso Reward Distributor Smart
+                    Contract</a> developed
+                  by <a href="https://github.com/alexdupre" title="alexdupre Github Repository"
+                    target="_new">alexdupre</a>.</p>
+
+                <p>The Smart Contract is currently deployed to <a
+                    href="https://coston-explorer.flare.network/address/0xc98fbA33De5DC14f691aa4Ad3dEA047c0C1a3886"
+                    target="_new">Coston</a>, <a
+                    href="https://coston2-explorer.flare.network/address/0x171eB1f854A7e542D88d6f6fb8827C83236C1937"
+                    target="_new">Coston2</a>, <a
+                    href="https://songbird-explorer.flare.network/address/0xc2826E4Ed912fB1EAC94c2Ce97e4111780Cd85be"
+                    target="_new">Songbird</a> and <a
+                    href="https://flare-explorer.flare.network/address/0x171eB1f854A7e542D88d6f6fb8827C83236C1937"
+                    target="_new">Flare</a> network. </p>
+
+                <p>The source code of this webapp is on <a href="https://github.com/Pennywise83/ftso-reward-distributor-webapp" target="_new">Github</a></p>
+                <hr class="bg-secondary border-1 border-top border-secondary my-4" />
+                <p>A set of smart contracts to automate the distribution of the fees generated by the FTSO
+                  providers. The primary use case is to simplify the work of the FTSO providers, that every epoch need
+                  to
+                  claim
+                  the fee, fund the provider's address with the gas needed for submit/reveal transactions, and wrap the
+                  remaining
+                  for compounding rewards, but it can be used by anyone that has similar needs.</p>
+                <p>A provider can instantiate a new smart contract where to claim the rewards to, by
+                  calling
+                  the
+                  <code>create</code> function of the <code>RewardDistributorFactory</code> contract, and by parsing the
+                  generated
+                  <code>Created</code> event to get the new instance address. It's not necessary to use the provider's
+                  private
+                  key
+                  to sign the transaction.
+                </p>
+                <p>The newly generated address has to be used as the <code>recipient</code> of the
+                  <code>FtsoRewardManager.claimReward</code> function. During the fee distribution the smart contract
+                  emits
+                  specific events for each performed transfer, that can be used for accounting purposes.
+                </p>
+              </div>
+            </div>
+          </ng-template>
+        </li>
+      </ul>
+      <div [ngbNavOutlet]="nav" class="mt-2 mb-5"></div>
+    </ng-container>
+  </div>
+
+  <ng-template #signModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">
+        <span *ngIf="operation == operations.create">Create instance</span>
+        <span *ngIf="operation == operations.edit">Edit instance</span>
+        <span *ngIf="operation == operations.destroy">Destroy instance</span>
+        <span *ngIf="operation == operations.remove">Remove instance from list</span>
+        <span *ngIf="operation == operations.confirmed">Operation confirmed</span>
+        <span *ngIf="operation == operations.failed">Operation failed</span>
+      </h4>
+      <button type="button" class="btn btn-close" aria-label="Close" (click)="modal.dismiss()"
+        *ngIf="operation != operations.submitting && operation != operations.transacting">
+      </button>
+    </div>
+    <div class="modal-body">
+      <ngb-alert *ngIf="modalClientMessage.hasMessage()" [dismissible]=false [type]="modalClientMessage.type"
+        class="mb-3" (close)="modalClientMessage.reset()">
+        <h4>{{modalClientMessage.title}}</h4>
+        <span *ngIf="modalClientMessage.message != null">{{modalClientMessage.message}}</span>
+        <a class="mt-3 d-block btn btn-sm btn-primary" target="_blank" href="{{modalClientMessage.txUrl}}"
+          *ngIf="(modalClientMessage.txUrl != null)">
+          <i class="bi bi-globe me-2"></i>View on block explorer</a>
+      </ngb-alert>
+
+      <div class="row" *ngIf="operation == operations.remove">
+        <div class="col-md-12">
+          <p>You are going to remove the instance from the Reward Distributor contract list.</p>
+          <table class="table table-sm table-bordered">
+            <tr>
+              <td class="bg-light"><small><strong>Instance address</strong></small></td>
+              <td *ngIf="selectedInstanceIdx != null && instancesList[selectedInstanceIdx]">
+                {{instancesList[selectedInstanceIdx].instance}}</td>
+
+            </tr>
+            <tr>
+              <td class="bg-light"><small><strong>Description</strong></small></td>
+              <td *ngIf="selectedInstanceIdx != null && instancesList[selectedInstanceIdx]">
+                {{instancesList[selectedInstanceIdx].description}}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="row"
+        *ngIf="operation == operations.create || operation == operations.edit || operation == operations.destroy">
+        <div class="col-md-12">
+          <p *ngIf="operation == operations.create">You are going to create a new instance of the RewardDistributor.</p>
+          <p *ngIf="operation == operations.edit">You are going to edit an existent instance of the RewardDistributor.
+          </p>
+          <p *ngIf="operation == operations.destroy">You are going to destroy the RewardDistributor Instance</p>
+          <table class="table table-bordered font-monospace table-sm">
+            <tbody>
+              <tr *ngIf="requestFormGroup.get('owner') && requestFormGroup.get('owner').value != null">
+                <td class="bg-light"><small><strong>Editor</strong></small></td>
+                <td>{{requestFormGroup.get('owner').value}}</td>
+              </tr>
+              <tr
+                *ngIf="requestFormGroup.get('instanceAddress') && requestFormGroup.get('instanceAddress').value != null">
+                <td class="bg-light"><small><strong>Instance address</strong></small></td>
+                <td>{{requestFormGroup.get('instanceAddress').value}}</td>
+              </tr>
+              <tr *ngIf="requestFormGroup.get('provider') && requestFormGroup.get('provider').value != null">
+                <td class="bg-light"><small><strong>Provider</strong></small></td>
+                <td>{{ requestFormGroup.get('provider').value}}</td>
+              </tr>
+              <tr *ngIf="requestFormGroup.get('description') && requestFormGroup.get('description').value != null">
+                <td class="bg-light"><small><strong>Description</strong></small></td>
+                <td>{{ requestFormGroup.get('description').value }}</td>
+              </tr>
+              <tr
+                *ngIf="requestFormGroup.get('reserveBalance') && requestFormGroup.get('reserveBalance').value != null">
+                <td class="bg-light"><small><strong>Reserve balance</strong></small></td>
+                <td>{{ requestFormGroup.get('reserveBalance').value }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <table class="table table-bordered font-monospace table-sm">
+            <thead class="bg-light">
+              <tr>
+                <th><small>Recipient address</small></th>
+                <th><small>Percentage</small></th>
+                <th><small>Wrap</small></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let recipientForm of recipients.controls">
+                <td>{{recipientForm.get('address').value}}</td>
+                <td>{{recipientForm.get('bips').value}} %</td>
+                <td>{{recipientForm.get('wrap').value}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="row" *ngIf="operation == operations.submitting">
+        <div class="col-md-12 text-center">
+          <div class="spinner-border spinner-border-xl text-secondary">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="fs-5">Waiting for user confirmation</p>
+          <hr class="bg-secondary border-1 border-top border-secondary mt-4 mb-2" />
+          <p class="text-muted mb-0">Follow prompts from your wallet</p>
+        </div>
+      </div>
+      <div class="row" *ngIf="operation == operations.transacting">
+        <div class="col-md-12 text-center">
+          <div class="spinner-border spinner-border-xl text-secondary">
+            <span class="visually-hidden">Sending transaction...</span>
+          </div>
+          <p class="fs-5">Waiting for network confirmation</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer justify-content-between">
+      <button class="btn light btn-secondary btn-sm" (click)="modal.dismiss()"
+        [disabled]="operation!=operations.create && operation!=operations.edit && operation!=operations.destroy && operation!=operations.failed && operation!=operations.confirmed && operation != operations.cancelled">
+        Close</button>
+
+      <button class="btn btn-primary btn-user btn-sm btn-block" (click)="createInstance()"
+        *ngIf="operation == operations.create">Confirm </button>
+
+      <ng-container *ngIf="operation == operations.edit">
+        <div>
+          <button class="btn btn-primary btn-sm btn-block me-2" (click)="replaceOwner()"
+            [disabled]="editCalls.indexOf(editTypes.editable) < 0">Make instance immutable</button>
+          <button class="btn btn-primary btn-sm btn-block me-2" (click)="renameInstance()"
+            [disabled]="editCalls.indexOf(editTypes.description) < 0">Rename instance</button>
+          <button class="btn btn-primary btn-sm btn-block me-2" (click)="replaceReserveBalance()"
+            [disabled]="editCalls.indexOf(editTypes.reserveBalance) < 0">Replace reserve balance</button>
+          <button class="btn btn-primary btn-sm btn-block" (click)="replaceRecipients()"
+            [disabled]="editCalls.indexOf(editTypes.recipients) < 0">Replace recipients</button>
+        </div>
+      </ng-container>
+
+      <button class="btn btn-primary btn-user btn-sm btn-block"
+        (click)="destroyInstance(requestFormGroup.get('instanceAddress').value)"
+        *ngIf="operation == operations.destroy">Destroy </button>
+
+      <button class="btn btn-primary btn-user btn-sm btn-block"
+        (click)="removeInstance(instancesList[this.selectedInstanceIdx].instance)"
+        *ngIf="operation == operations.remove">Remove from list </button>
+
+      <button disabled class="btn btn-primary btn-sm btn-block" *ngIf="operation==operations.submitting">
+        <span class="spinner-border spinner-border-sm me-2"></span>Waiting for authorization...
+      </button>
+      <button disabled class="btn btn-primary btn-sm btn-block" *ngIf="operation==operations.submitted">
+        <span class="spinner-border spinner-border-sm me-2"></span>Submitted...
+      </button>
+      <button disabled class="btn btn-primary btn-sm btn-block" *ngIf="operation==operations.transacting">
+        <span class="spinner-border spinner-border-sm me-2"></span>Transacting...
+      </button>
+
+
+    </div>
+  </ng-template>
+</ng-container>
