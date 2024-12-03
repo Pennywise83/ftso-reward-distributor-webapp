@@ -44,9 +44,13 @@ lerna-debug.log*
 /libpeerconnection.log
 testem.log
 /typings
+/src/typechain
 
 # System files
 .DS_Store
 Thumbs.db
 
 
+.vscode/launch.json
+package-lock.json
+package copy.json

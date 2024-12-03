@@ -3,9 +3,9 @@ import detectEthereumProvider from '@metamask/detect-provider';
 import { BigNumber, ethers } from 'ethers';
 import { firstValueFrom, Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { RewardDistributor, RewardDistributorFactory__factory, RewardDistributor__factory } from 'src/typechain';
-import { IRewardDistributor } from 'src/typechain/RewardDistributor';
-import { IRewardDistributorFactory, RewardDistributorFactory } from 'src/typechain/RewardDistributorFactory';
+import { RewardDistributor, RewardDistributorFactory__factory, RewardDistributor__factory } from 'src/typechain/v1';
+import { IRewardDistributor } from 'src/typechain/v1/RewardDistributor';
+import { IRewardDistributorFactory, RewardDistributorFactory } from 'src/typechain/v1/RewardDistributorFactory';
 import { Commons } from '../commons';
 import { ChainIdInfo } from '../model/chain-id-info';
 import { NamedInstance } from '../model/named-instance';
@@ -59,7 +59,7 @@ export class RewardsDistributorService {
     return new Observable<boolean>(observer => {
       this._selectedChain = null;
       this._provider.getNetwork().then(async (network: INetwork) => {
-        environment.availableChains.filter(currentChainId => currentChainId.chainId == network.chainId).map(async currentChainId => {
+        environment.availableChainsV1.filter(currentChainId => currentChainId.chainId == network.chainId).map(async currentChainId => {
           this._selectedChain = currentChainId;
           try {
             this._rewardDistributorFactory = RewardDistributorFactory__factory.connect(this._selectedChain.contractAddress, this._signer);
@@ -113,23 +113,6 @@ export class RewardsDistributorService {
     });
   }
 
-  public connectMetamask(): Observable<boolean> {
-    return new Observable<boolean>(observer => {
-      try {
-        this._provider.send("eth_requestAccounts", []).then(async (accounts) => {
-          await firstValueFrom(this.initializeSmartContract());
-          this._address = accounts[0];
-          this.addressChanged.emit(accounts[0]);
-          this.chainIdChanged.emit(this._selectedChain);
-          observer.next(true);
-          observer.complete();
-        });
-      } catch (error) {
-        observer.error(error);
-        observer.complete();
-      }
-    });
-  }
 
   public destroy(instanceAddress: string): Observable<TransactionMessage> {
     return new Observable<TransactionMessage>(observer => {
@@ -282,7 +265,7 @@ export class RewardsDistributorService {
       let txMessage: TransactionMessage = new TransactionMessage();
       this._signer = this._provider.getSigner();
       let _rewardDistributor = RewardDistributor__factory.connect(request.instanceAddress, this._signer);
-      let parsedRequest: RewardsDistributorRequest = Commons.marshallRequest(request);
+      let parsedRequest: RewardsDistributorRequest = Commons.marshallRequestV1(request);
       _rewardDistributor.replaceReserveBalance(parsedRequest.reserveBalance).then(res => {
         txMessage = new TransactionMessage(TransactionOperationEnum.transacting);
         observer.next(txMessage);
@@ -307,7 +290,7 @@ export class RewardsDistributorService {
     let txMessage: TransactionMessage = new TransactionMessage();
     return new Observable<TransactionMessage>(observer => {
       let _rewardDistributor = RewardDistributor__factory.connect(request.instanceAddress, this._signer);
-      let parsedRequest: RewardsDistributorRequest = Commons.marshallRequest(request);
+      let parsedRequest: RewardsDistributorRequest = Commons.marshallRequestV1(request);
       _rewardDistributor.replaceRecipients(parsedRequest.recipients, parsedRequest.bips, parsedRequest.wrap).then(res => {
         txMessage = new TransactionMessage(TransactionOperationEnum.transacting);
         observer.next(txMessage);
@@ -356,7 +339,7 @@ export class RewardsDistributorService {
   public create(request: RewardsDistributorRequestDto): Observable<TransactionMessage> {
     let txMessage: TransactionMessage = new TransactionMessage();
     return new Observable<TransactionMessage>(observer => {
-      let parsedRequest: RewardsDistributorRequest = Commons.marshallRequest(request);
+      let parsedRequest: RewardsDistributorRequest = Commons.marshallRequestV1(request);
       this._rewardDistributorFactory.create(
         parsedRequest.provider,
         parsedRequest.reserveBalance,

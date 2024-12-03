@@ -16,9 +16,8 @@ import { RewardsDistributorService } from './services/rewards-distributor.servic
   styleUrls: ['./reward-distributor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RewardDistributorComponent implements OnInit {
+export class RewardDistributorComponentV1 implements OnInit {
   public isMetamaskInstalled: boolean = false;
-  public activeTab = 0;
   public operations = TransactionOperationEnum;
   public operation: TransactionOperationEnum = null;
   public instancesList: Array<NamedInstance> = [];
@@ -239,17 +238,7 @@ export class RewardDistributorComponent implements OnInit {
       this._cdr.detectChanges();
     })
   }
-  public connectMetamask(): void {
-    this._rewardsDistributorService.connectMetamask().subscribe(metamaskRes => {
-      this.walletConnected = true;
-      if (this.isWalletConnected()) {
-        this.getAllInstances();
-      }
-      this._cdr.detectChanges();
-    }, metamaskError => {
-      this.mainClientMessage = new ClientMessage('Unable to connect wallet with Metamask', metamaskError, null, 'danger')
-    })
-  }
+
 
   private getAllInstances() {
     this.mainClientMessage.reset();
@@ -355,7 +344,7 @@ export class RewardDistributorComponent implements OnInit {
   }
   public createInstance(): void {
     this.operation = TransactionOperationEnum.submitting;
-    let request: RewardsDistributorRequestDto = Commons.marshallRequestDto(this.requestFormGroup);
+    let request: RewardsDistributorRequestDto = Commons.marshallRequestDtoV1(this.requestFormGroup);
     this._rewardsDistributorService.create(request).subscribe(res => {
       if (res.operation == TransactionOperationEnum.transacting) {
         this.operation = TransactionOperationEnum.transacting;
@@ -413,7 +402,7 @@ export class RewardDistributorComponent implements OnInit {
   }
   public replaceOwner(): void {
     this.operation = TransactionOperationEnum.submitting;
-    let request: RewardsDistributorRequestDto = Commons.marshallRequestDto(this.requestFormGroup);
+    let request: RewardsDistributorRequestDto = Commons.marshallRequestDtoV1(this.requestFormGroup);
     this._rewardsDistributorService.replaceOwner(request).subscribe(res => {
       if (res.operation == TransactionOperationEnum.transacting) {
         this.operation = TransactionOperationEnum.transacting;
@@ -437,7 +426,7 @@ export class RewardDistributorComponent implements OnInit {
   }
   public renameInstance(): void {
     this.operation = TransactionOperationEnum.submitting;
-    let request: RewardsDistributorRequestDto = Commons.marshallRequestDto(this.requestFormGroup);
+    let request: RewardsDistributorRequestDto = Commons.marshallRequestDtoV1(this.requestFormGroup);
     this._rewardsDistributorService.rename(request.instanceAddress, request.description).subscribe(res => {
       if (res.operation == TransactionOperationEnum.transacting) {
         this.operation = TransactionOperationEnum.transacting;
@@ -462,7 +451,7 @@ export class RewardDistributorComponent implements OnInit {
   }
   public replaceReserveBalance(): void {
     this.operation = TransactionOperationEnum.submitting;
-    let request: RewardsDistributorRequestDto = Commons.marshallRequestDto(this.requestFormGroup);
+    let request: RewardsDistributorRequestDto = Commons.marshallRequestDtoV1(this.requestFormGroup);
     this._rewardsDistributorService.replaceReserveBalance(request).subscribe(res => {
       if (res.operation == TransactionOperationEnum.transacting) {
         this.operation = TransactionOperationEnum.transacting;
@@ -486,7 +475,7 @@ export class RewardDistributorComponent implements OnInit {
   }
   public replaceRecipients(): void {
     this.operation = TransactionOperationEnum.submitting;
-    let request: RewardsDistributorRequestDto = Commons.marshallRequestDto(this.requestFormGroup);
+    let request: RewardsDistributorRequestDto = Commons.marshallRequestDtoV1(this.requestFormGroup);
     this._rewardsDistributorService.replaceRecipients(request).subscribe(res => {
       if (res.operation == TransactionOperationEnum.transacting) {
         this.operation = TransactionOperationEnum.transacting;
@@ -515,5 +504,4 @@ export class RewardDistributorComponent implements OnInit {
   }
 
 }
-
 
